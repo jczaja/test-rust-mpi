@@ -72,6 +72,28 @@ fn tut2b(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::R
     }
 }
 
+fn tut2c(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Rank) {
+    let mut token;
+    if rank != 0 {
+        (token, _) = (*comm).process_at_rank(rank - 1).receive::<i32>();
+        println!("{rank}: received token: {token}");
+    } else {
+        token = -1;
+        println!("{rank}: Initialize token(-1)");
+    }
+
+    comm.process_at_rank((rank + 1) % size).send(&token);
+    println!(
+        "{rank}: handing token: {token} over to {}",
+        (rank + 1) % size
+    );
+
+    if rank == 0 {
+        (token, _) = (*comm).process_at_rank(size - 1).receive::<i32>();
+        println!("{rank}: received token: {token}");
+    }
+}
+
 fn main() {
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
@@ -80,5 +102,6 @@ fn main() {
 
     //basic(&world,rank,size);
     //tut2a(&world, rank, size);
-    tut2b(&world, rank, size);
+    //tut2b(&world, rank, size);
+    tut2c(&world, rank, size);
 }
