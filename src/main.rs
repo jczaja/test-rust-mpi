@@ -1,5 +1,7 @@
 use mpi::request::WaitGuard;
 use mpi::traits::*;
+use rand::prelude::SliceRandom;
+use rand::Rng;
 
 fn basic(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Rank) {
     let next_rank = (rank + 1) % size;
@@ -94,6 +96,34 @@ fn tut2c(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::R
     }
 }
 
+fn tut3a(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Rank) {
+    const MAX_NUMBERS: u32 = 100;
+    let mut rng = rand::thread_rng();
+
+    if rank == 0 {
+        let mut numbers: Vec<u32> = (0..MAX_NUMBERS).collect();
+        numbers.shuffle(&mut rng);
+        let numbers_sent = rng.gen_range(0..MAX_NUMBERS);
+        comm.process_at_rank((rank + 1) % size)
+            .send(&numbers[0..numbers_sent as usize]);
+        println!(
+            "{rank}: sending {} numbers to {}",
+            numbers_sent,
+            (rank + 1) % size
+        );
+    } else if rank == 1 {
+        let (msg, status) = (*comm).process_at_rank(rank - 1).receive_vec::<i32>();
+        println!(
+            "{rank}: received  {} elements. STATUS: source_rank({}), tag: {}",
+            msg.len(),
+            status.source_rank(),
+            status.tag()
+        );
+    } else {
+        println!("{rank}: I'm not playing");
+    }
+}
+
 fn main() {
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
@@ -103,5 +133,6 @@ fn main() {
     //basic(&world,rank,size);
     //tut2a(&world, rank, size);
     //tut2b(&world, rank, size);
-    tut2c(&world, rank, size);
+    //tut2c(&world, rank, size);
+    tut3a(&world, rank, size);
 }
