@@ -150,6 +150,17 @@ fn tut6(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Ra
     }
 
     println!("{rank}: My values are : {:?}", recvbuf);
+    let avg = recvbuf.iter().sum::<u32>() as f32 / recvbuf.len() as f32;
+
+    if rank == 0 {
+        let mut avgbuf: Vec<f32> = vec![0.0f32; size as usize];
+        (comm).process_at_rank(0).gather_into_root(&avg, &mut avgbuf);
+        let totalavg = avgbuf.iter().sum::<f32>() as f32 / avgbuf.len() as f32;
+        println!("{rank}: Total average is : {totalavg}");
+    } else {
+        (comm).process_at_rank(0).gather_into(&avg);
+    }
+
 }
 
 fn main() {
