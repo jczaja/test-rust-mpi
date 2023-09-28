@@ -124,6 +124,34 @@ fn tut3a(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::R
     }
 }
 
+fn tut5(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Rank) {
+    let mut value;
+    if rank == 0 {
+        value = 100;
+    } else {
+        value = 0;
+    }
+    (comm).process_at_rank(0).broadcast_into(&mut value);
+
+    println!("{rank}: My value is : {value}");
+}
+
+fn tut6(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Rank) {
+    const MAX_NUMBERS: u32 = 20;
+
+    let mut recvbuf: Vec<u32> = vec![0; MAX_NUMBERS as usize / size as usize];
+    if rank == 0 {
+        let numbers: Vec<u32> = (0..MAX_NUMBERS).collect();
+        (comm)
+            .process_at_rank(0)
+            .scatter_into_root(&numbers, &mut recvbuf);
+    } else {
+        (comm).process_at_rank(0).scatter_into(&mut recvbuf);
+    }
+
+    println!("{rank}: My values are : {:?}", recvbuf);
+}
+
 fn main() {
     let universe = mpi::initialize().unwrap();
     let world = universe.world();
@@ -134,5 +162,7 @@ fn main() {
     //tut2a(&world, rank, size);
     //tut2b(&world, rank, size);
     //tut2c(&world, rank, size);
-    tut3a(&world, rank, size);
+    //tut3a(&world, rank, size);
+    //tut5(&world, rank, size);
+    tut6(&world, rank, size);
 }
