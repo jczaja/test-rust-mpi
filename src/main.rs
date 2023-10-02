@@ -136,7 +136,7 @@ fn tut5(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Ra
     println!("{rank}: My value is : {value}");
 }
 
-fn tut6(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Rank) {
+fn tut6a(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Rank) {
     const MAX_NUMBERS: u32 = 20;
 
     let mut recvbuf: Vec<u32> = vec![0; MAX_NUMBERS as usize / size as usize];
@@ -154,13 +154,48 @@ fn tut6(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Ra
 
     if rank == 0 {
         let mut avgbuf: Vec<f32> = vec![0.0f32; size as usize];
-        (comm).process_at_rank(0).gather_into_root(&avg, &mut avgbuf);
+        (comm)
+            .process_at_rank(0)
+            .gather_into_root(&avg, &mut avgbuf);
         let totalavg = avgbuf.iter().sum::<f32>() as f32 / avgbuf.len() as f32;
         println!("{rank}: Total average is : {totalavg}");
     } else {
         (comm).process_at_rank(0).gather_into(&avg);
     }
+}
 
+fn tut6b(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Rank) {
+    let val = rank as f32;
+    let mut gathered: Vec<f32> = vec![0.0f32; size as usize];
+    println!("{rank} is having {val}");
+    (comm).all_gather_into(&val, &mut gathered);
+    println!("{rank}: My values are : {:?}", gathered);
+}
+
+fn tut7a(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Rank) {
+    let val = rank as f32;
+    let mut sum = 0.0f32;
+    if rank == 0 {
+        (comm).process_at_rank(0).reduce_into_root(
+            &val,
+            &mut sum,
+            mpi::collective::SystemOperation::sum(),
+        );
+    } else {
+        (comm)
+            .process_at_rank(0)
+            .reduce_into(&val, mpi::collective::SystemOperation::sum());
+    }
+
+    println!("{rank}: My sum is : {:?}", sum);
+}
+
+fn tut7b(comm: &mpi::topology::SystemCommunicator, rank: mpi::Rank, size: mpi::Rank) {
+    let val = rank as f32;
+    let mut sum = 0.0f32;
+    (comm).all_reduce_into(&val, &mut sum, mpi::collective::SystemOperation::sum());
+
+    println!("{rank}: My sum is : {:?}", sum);
 }
 
 fn main() {
@@ -175,5 +210,8 @@ fn main() {
     //tut2c(&world, rank, size);
     //tut3a(&world, rank, size);
     //tut5(&world, rank, size);
-    tut6(&world, rank, size);
+    //tut6a(&world, rank, size);
+    //tut6b(&world, rank, size);
+    tut7a(&world, rank, size);
+    //tut7b(&world, rank, size);
 }
