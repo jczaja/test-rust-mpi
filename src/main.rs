@@ -204,6 +204,10 @@ fn main() {
     let size = world.size();
     let rank = world.rank();
 
+    if rank == 0 {
+        println!("Size of MPI universe: {size}");
+    }
+
     //basic(&world,rank,size);
     //tut2a(&world, rank, size);
     //tut2b(&world, rank, size);
